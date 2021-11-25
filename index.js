@@ -1,5 +1,5 @@
-var execSync = require('child_process');
-var cors = require('cors')
+const execSync = require('child_process');
+const cors = require('cors')
 
 const express = require("express");
 
