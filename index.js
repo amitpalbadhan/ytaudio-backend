@@ -1,13 +1,11 @@
 var execSync = require('child_process');
+var cors = require('cors')
 
 const express = require("express");
-const fs = require('fs');
-const { createFFmpeg, fetchFile } = require('@ffmpeg/ffmpeg');
 
 const app = express();
+app.use(cors());
 let port = process.env.PORT || 3000;
-
-const ffmpeg = createFFmpeg({ log: true });
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -28,18 +26,25 @@ function findLeastIndex(lst, start, end) {
   return findLeastIndex(lst, start, mid);
 }
 
-let downloadQueue = [0, 1, 3, 4];
+let downloadQueue = [];
 
 app.get('/api', async (req, res) => {
   const file = findLeastIndex(downloadQueue, 0, downloadQueue.length - 1);
   downloadQueue.splice(file, 0, file);
   console.log(downloadQueue);
 
-  require('child_process').execSync(`yt-dlp.exe -o "${file}.%(ext)s" -P "./data/" -x --audio-format ${req.query.format} https://www.youtube.com/watch?v=${req.query.id}`);
+  require('child_process').execSync(`./yt-dlp/yt-dlp.sh -o "${req.query.id}.%(ext)s" -P "./data/" -x --audio-format ${req.query.format} https://www.youtube.com/watch?v=${req.query.id}`);
 
-  res.download(`${__dirname}/data/${file + '.' + req.query.format}`);
+  res.download(`${__dirname}/data/${req.query.id + '.' + req.query.format}`);
 
-  require('child_process').execSync(`${__dirname}/data/${file + '.' + req.query.format}`);
+  await sleep(20000)
+  function sleep(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
+  require('child_process').execSync(`rm ${__dirname}/data/${req.query.id + '.' + req.query.format}`);
 
   downloadQueue.splice(downloadQueue.indexOf(file));
 });
